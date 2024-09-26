@@ -6,7 +6,7 @@ title: About
 
 <!-- <img class="user-avatar" src="{{ site.owner.avatar }}"> -->
 
-More info on how to deploy Valinor framework will be posted here!
+<!-- More info on how to deploy Valinor framework will be posted here!
 
 <div class="pagination">
   {% if site.owner.linkedin %}
@@ -21,4 +21,4 @@ More info on how to deploy Valinor framework will be posted here!
   {% if site.owner.github %}
     <a href="{{ site.owner.github }}" class="social-media-icons"><i class="fa fa-2x fa-github-square" aria-hidden="true"></i></a>
   {% endif %}
-</div>
+</div> -->

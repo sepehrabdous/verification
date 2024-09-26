@@ -1,6 +1,6 @@
-name: Valinor Measurement Framework
+name: Verifying Modern Networks
 description: >
-    Valinor Burst Measurement Framework
+    Network verification project
 about: >
     NSDI '23 artifacts
 
@@ -18,9 +18,9 @@ disqus_shortname:
 
 rtl: false
 owner:
-  name:           Valinor project
+  name:           Verification project
   avatar:         "https://avatars.githubusercontent.com/u/3146197?s=400&u=51ad0fc8f592ca960213b653ca3b01d582db44b2&v=4"
-  email:          "erfan@cs.jhu.edu"
+  email:          "abdous1@jh.edu"
   # # Social networking links used in footer. Update and remove as you like.
   # twitter: vinitkme
   github: https://github.com/hopnets/valinor-artifacts

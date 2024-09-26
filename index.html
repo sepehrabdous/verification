@@ -5,96 +5,113 @@ title: Valinor framework home
 
 <h2>Motivation</h2>
 <p>
-  &diams; <b>What</b> causes the network traffic to emerge from hosts in <b>bursts?</b> <br><br>
-  &diams; Is burstiness an <b>scale-invariant</b> property of traffic? (Does the traffic retain its burstiness across a wide range of timescales, or do the
-      microbursts become smooth at coarse timescales?) <br><br>
-  &diams; Are canonical burst <b>countermeasures</b> such as TCP pacing and packet scheduling effective in curtailing bursts?
+  &diams; While existing network verification tools focus almost exclusively on different variants of reachability, can we verify <b>liveness properties</b> at scale? <br><br>
+  &diams; Given a <b>combinational property</b>, i.e., a property that falls under both safety and liveness criteria, can we decompose it to <b>safety-only</b> and <b>liveness-only</b> properties? <br><br>
+  &diams; Can we verify the <b>latency</b> of modern large-scale networks with <b>packet-level granularity</b>?
 </p>
 <p>
-  Our study attempts to find an answer for above questions.
+  Below, we highlight the <a href="http://soudeh.net/#research">research</a> conducted by <a href="http://soudeh.net/#bio">our team</a> to answer these questions.
 </p>
 <hr/>
-<h2>System</h2>
+<h2>Scalable liveness verification</h2>
 <p>
-  <b>Valinor</b> framework offers visibility into traffic burstiness over a wide span of timescales (nanosecond- to second-scale) at multiple vantage points by capturing timestamp and metadata information for incoming/outgoing packets in the network.
+  We argue that the goal of verifying liveness properties is achievable using a <b>top-down function-oriented strategy</b> that rethinks network abstractions with the efficiency of verification in mind.
 
   <br><br>
-  Valinor consists of four components:
-  <ol class="val-list-parent">
-    <li class="val-list"><b>Valinor-N:</b> Valinor's programmable data plane based on Tofino architecture. Valinor generates timestamp packets for every incoming packet and sends them to a user-defined port for offline/online analysis.</li>
-    <li class="val-list"><b>Valinor-H:</b> Valinor's eBPF program that connects to tc hook in Linux operating system. Valinor-H uses a userspace control plane to retrieve the timestamps for egress packets and stores the entries in a Redis database.</li>
-    <li class="val-list"><b>Valinor-C:</b> Is a DPDK-based packet processing software that is the endpoint for Valinor-N's timestamp packets. Valinor-C also uses Redis to store the collected timestamp entries for packets</li>
-    <li class="val-list"><b>Valinor-O:</b> Consists of various scripts for processing timestamp entries.</li>
-  </ol>
-  <p>Example deployment scenario: </p>
-  <img src="valinor_setup.png" class="design-figure" alt="Deployment scenario">
+  Contributions:
+  <ul class="val-list-parent">
+    <li class="val-list"><b>Abstraction:</b> We provide network programmers with a simple, familiar abstraction of one big switch to express their intent. This abstraction enforces the logical separation of different network functions.</li>
+    <li class="val-list"><b>Packet-less model:</b> We model the program as a compact packet-less data structure that abstracts away the explicit notion of packets and focuses instead on the entities responsible for implementing functions (packet handling rules).</li>
+    <li class="val-list"><b>P4 compiler:</b> We provide a compiler that translates the programs written using our abstraction to P4 programs.</li>
+  </ul>
   
 </p>
-<hr/>
-<h2>Results</h2>
-<h3>Congestion Control Variants</h3>
+
+<h3>Our abstraction is expressive.</h3>
 <p>
-  TCP congestion control variants use different signals to detect congestion in the network. This results in significantly different buffer utilization patterns. Valinor-N can capture the dynamics of switch buffer utilization 
-  at microsecond granularity. <br><br>
-  <img src="8_a_w.png" class="result-figure">
+  Our one big switch abstraction is designed to be capable of performing similar computations and is therefore 
+  expressive enough to program a wide range of network functions. Table below lists the
+  functions of a few common control planes and recent network
+  abstractions that we re-wrote on top of our abstraction <br><br>
+  <img src="verified_list.png" class="design-figure" alt="Verified properties">
 </p>
 
-<h3>Linux qdiscs in the presense of NIC offloading and scheduling</h3>
+<h3>Our model is fast.</h3>
 <p>
-  Linux offers a modular platform for implementing various packet scheduling paradigms, called queueing disciplines or in short, <em>qdiscs</em>.
-  However, are these software elements effecting in shaping the traffic when NIC segmentation offloading and lulti-ring scheduling functions are active?
+  Below, Figure (a) and (b) show examples for a UDP flood mitigation function which deploys a per-source IP counter that is incremented for every UDP
+  packet and starts dropping packets when the counter exceeds a threshold. Figure (c) and (d) show examples for an “absence” property 
+  (host A is never reachable) and “universality” (A is always reachable), respectively. The results demonstrate that packet-less verification 
+  significantly reduces the verification time of different properties for a flood mitigation function.
   <br><br>
-  We compare two Linux qdiscs, <em>fq</em> and <em>pfifo_fast</em> under four configurations. Our results suggest that low layers of the network stack compromise the traffic shaping efforts of the software packet schedulers:
-  <br><br>
-  <div class="row">
-    <div class="column">
-      <img src="9_a_w.png"  alt="no TSO - single ring" style="width:100%">
-    </div>
-    <div class="column">
-      <img src="9_c_w.png"  alt="TSO - single ring" style="width:100%">
-    </div>
-    </div>
-    <div class="row">
-    <div class="column">
-      <img src="9_d_w.png"  alt="no TSO - multi ring" style="width:100%">
-    </div>
-    <div class="column">
-      <img src="9_b_w.png"  alt="TSO - multi ring" style="width:100%">
-    </div>
-  </div>
-  <!-- <img src="9_a_w.png" class="result-figure">
-  <img src="9_a_w.png" class="result-figure">
-  <img src="9_a_w.png" class="result-figure">
-  <img src="9_a_w.png" class="result-figure"> -->
+  <img src="liveness_result.png" class="design-figure" alt="Packet-less verification time">
 </p>
 
 <p>
-  More interesting results on impact of TCP pacing, Linux qdiscs, and process scheduling on packet bursts can be found in our published paper.
+  More details can be found in our paper: <a href="https://www.usenix.org/conference/nsdi20/presentation/yousefi">Liveness Verification of Stateful Network Functions
+  </a>. <br><br>
 </p>
 
 <hr/>
-<h2>Artifacts and Further Reading</h2>
+<h2>Property decomposition</h2>
+
+<hr/>
+<h2>Packet-level latency verification</h2>
 <p>
-  The publication can be access at <a href="https://www.usenix.org/conference/nsdi23/presentation/sharafzadeh">NSDI '23 website</a>. <br><br>
-  The super repository containing Valinor artifacts can be found <a href="https://github.com/hopnets/valinor-artifacts">here!</a>. <br><br>
-
-  Please email the authors with your questions and ideas on improving Valinor.
+  Albeit faster than their current simulation-based counterparts, the state-of-the-art verifiers today
+  have major limitations such as not modeling failures or latency that prevent
+  them from reliably verifying latency. We bridge this gap by proposing a scalable latency verification
+  method that refines advanced abstract network models to enable fast latency verification.
+  <br><br>
+  Contributions:
+  <ul class="val-list-parent">
+    <li class="val-list"><b>Temporal verification:</b> We decompose the latency verification task
+      into two phases: (i) functional verification, in which we
+      compute the probability of two nodes being reachable under various network states, and (ii) temporal verification, in
+      which we calculate the probability of reaching a node
+      from another one below the user-specified latency bound.</li>
+    <li class="val-list"><b>Optimization:</b> We propose novel caching mechanisms that speed up the verification process.</li>
+    <li class="val-list"><b>Implementation:</b> We implement our verifier, i.e., Tempus, in Julia and evaluate it under various scales of datacenter and wide area networks..</li>
+  </ul>
+  <br>
+  The architecture of Tempus:
+  <br><br>
+  <img src="tempus_arch.png" class="design-figure" alt="Tempus's architecture">
 </p>
-<!-- <div class="pagination">
-  {% if site.owner.linkedin %}
-    <a href="{{ site.owner.linkedin }}" class="social-media-icons"><i class="fa fa-2x fa-linkedin-square" aria-hidden="true"></i></a>
-  {% endif %}
-  {% if site.owner.email %}
-    <a href="mailto:{{ site.owner.email }}" class="social-media-icons"><i class="fa fa-2x fa-envelope-square" aria-hidden="true"></i></a>
-  {% endif %}
-  {% if site.owner.twitter %}
-    <a href="https://twitter.com/{{ site.owner.twitter }}" class="social-media-icons"><i class="fa fa-2x fa-twitter-square" aria-hidden="true"></i></a>
-  {% endif %}
-  {% if site.owner.github %}
-    <a href="{{ site.owner.github }}" class="social-media-icons"><i class="fa fa-2x fa-github-square" aria-hidden="true"></i></a>
-  {% endif %}
-</div> -->
 
+<h3>Tempus is fast.</h3>
+<p>
+  We run Tempus on various scales of k-ary fat-tree topology with 100 Gbps links under 25%
+  load and compare the verification time with the time taken for simulating all failure scenarios using the state-of-the-art
+  network simulators. For this purpose, we use OMNeT++ (a non-parallel packet-level network simulator), Parsimon (a parallel flow-level simulator), and DONS
+  (a parallel packet-level simulator). We observe that tempus is orders of magnitude faster than all these simulators:<br><br>
+  <img src="tempus_fast.png" class="design-figure" alt="Tempus is fast">
+  
+  ''αy βmo γd δh ηmin κs’’ represents α years, β months, γ days, δ hours, η minutes, and κ seconds.
+</p>
+
+<h3>Tempus is accurate.</h3>
+<p>
+  To evaluate the accuracy of Tempus, we simulate the
+  no-failure scenario and various degrees of load in a two-tier leaf-spine topology using
+  OMNeT++ and measure the tail (99th percentile) packet-level delay. We repeat the
+  simulations ten times to capture various randomnesses caused
+  by the simulator. For Tempus, we input the network topology
+  and the empirical queueing time measurements from our
+  simulations and record the tail latency estimated
+  by Tempus for the no-failure scenario. We observe that,
+  irrespective of the load, Tempus accurately captures the upper
+  limit for the tail delay:<br><br>
+  <img src="tempus_accurate.png" class="design-figure" alt="Tempus is accurate">
+  The box and whisker plots represent distinct tail latencies
+  recorded as we repeat the simulations multiple times.
+</p>
+
+<p>
+  More details can be found in our paper: <a href="">Tempus: Probabilistic Network Latency Verification</a>. 
+  <br>
+  For the codebase, please refer to the <a href="https://github.com/hopnets/Tempus">Github page of Tempus</a>. 
+  <br><br>
+</p>
 
 <div class="listing">
     {% for post in paginator.posts %}
